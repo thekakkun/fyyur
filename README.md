@@ -1,8 +1,8 @@
 # Fyyur
 
-A project for [Udacity's Full Stack Web Developer Nanodegree Program](https://www.udacity.com/course/full-stack-web-developer-nanodegree--nd0044), Part 1: SQL and Data Modeling for the Web. See the [rest of the projects here].(https://github.com/thekakkun/udacity_projects).
+A project for [Udacity's Full Stack Web Developer Nanodegree Program](https://www.udacity.com/course/full-stack-web-developer-nanodegree--nd0044), Part 1: SQL and Data Modeling for the Web.
 
-This project is a fork of https://github.com/udacity/cd0046-SQL-and-Data-Modeling-for-the-Web. Check the original repo for more information on the project.
+Check out the [original repo](https://github.com/udacity/cd0046-SQL-and-Data-Modeling-for-the-Web) for more information on the project, or [see the rest of the projects completed for the nanodegree](https://github.com/thekakkun/udacity_projects).
 
 ## Tech Stack (Dependencies)
 
