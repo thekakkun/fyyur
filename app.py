@@ -49,10 +49,15 @@ class Venue(db.Model):
     state = db.Column(db.String(120), nullable=False)
     address = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(120), nullable=False)
-    image_link = db.Column(db.String(500), nullable=False)
+    genres = db.relationship('Genre', secondary=venue_genre,
+                             backref=db.backref('venue'))
     facebook_link = db.Column(db.String(120), nullable=False)
+    image_link = db.Column(db.String(500), nullable=False)
+    website_link = db.Column(db.String(120), nullable=False)
+    seeking_talent = db.Column(db.Boolean)
+    seeking_description = db.Column(db.String(500))
+
     shows = db.relationship('Show', backref='venue')
-    genre = db.relationship('Genre', secondary='venue_genre')
 
 
 artist_genre = db.Table('artist_genre',
@@ -71,22 +76,26 @@ class Artist(db.Model):
     city = db.Column(db.String(120), nullable=False)
     state = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(120), nullable=False)
-    genres = db.Column(db.String(120), nullable=False)
-    image_link = db.Column(db.String(500), nullable=False)
+    genres = db.relationship('Genre', secondary=artist_genre,
+                             backref=db.backref('artist'))
     facebook_link = db.Column(db.String(120), nullable=False)
+    image_link = db.Column(db.String(500), nullable=False)
+    website_link = db.Column(db.String(120), nullable=False)
+    seeking_venue = db.Column(db.Boolean, nullable=False, default=False)
+    seeking_description = db.Column(db.String(500))
+
     shows = db.relationship('Show', backref='artist')
-    genre = db.relationship(
-        'Genre', secondary=artist_genre, backref=db.backref('genre'))
 
 
 class Show(db.Model):
     __tablename__ = 'show'
 
     id = db.Column(db.Integer, primary_key=True)
+    venue_id = db.Column(db.Integer, db.ForeignKey('venue.id'),
+                         nullable=False)
+    artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'),
+                          nullable=False)
     start_time = db.Column(db.DateTime(), nullable=False)
-    venue_id = db.Column(db.Integer, db.ForeignKey('venue.id'), nullable=False)
-    artist_id = db.Column(db.Integer, db.ForeignKey(
-        'artist.id'), nullable=False)
 
 
 class Genre(db.Model):
@@ -277,12 +286,15 @@ def create_venue_submission():
                       state=data.get('state'), address=data.get('address'),
                       phone=data.get('phone'),
                       facebook_link=data.get('facebook_link'),
-                      image_link=data.get('image_link'),)
+                      image_link=data.get('image_link'))
+        venue.genres.extend([Genre(name=g) for g in data.getlist('genres')])
         db.session.add(venue)
         db.session.commit()
     except:
         error = True
         db.session.rollback()
+
+        raise
     finally:
         db.session.close()
 
