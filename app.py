@@ -10,6 +10,7 @@ import babel
 import dateutil.parser
 from flask import (Flask, Response, flash, redirect, render_template, request,
                    url_for)
+from flask_migrate import Migrate
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import Form
@@ -24,44 +25,76 @@ app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
 db = SQLAlchemy(app)
-
-# (DONE) TODO: connect to a local postgresql database
+migrate = Migrate(app, db)
 
 #----------------------------------------------------------------------------#
 # Models.
 #----------------------------------------------------------------------------#
 
 
+venue_genre = db.Table('venue_genre',
+                       db.Column('venue_id', db.Integer,
+                                 db.ForeignKey('venue.id'), primary_key=True),
+                       db.Column('genre_id', db.Integer,
+                                 db.ForeignKey('genre.id'), primary_key=True)
+                       )
+
+
 class Venue(db.Model):
-    __tablename__ = 'Venue'
+    __tablename__ = 'venue'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    address = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
+    name = db.Column(db.String, nullable=False)
+    city = db.Column(db.String(120), nullable=False)
+    state = db.Column(db.String(120), nullable=False)
+    address = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(120), nullable=False)
+    image_link = db.Column(db.String(500), nullable=False)
+    facebook_link = db.Column(db.String(120), nullable=False)
+    shows = db.relationship('Show', backref='venue')
+    genre = db.relationship('Genre', secondary='venue_genre')
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+
+artist_genre = db.Table('artist_genre',
+                        db.Column('artist_id', db.Integer,
+                                  db.ForeignKey('artist.id'), primary_key=True),
+                        db.Column('genre_id', db.Integer,
+                                  db.ForeignKey('genre.id'), primary_key=True)
+                        )
 
 
 class Artist(db.Model):
-    __tablename__ = 'Artist'
+    __tablename__ = 'artist'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
+    name = db.Column(db.String, nullable=False)
+    city = db.Column(db.String(120), nullable=False)
+    state = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(120), nullable=False)
+    genres = db.Column(db.String(120), nullable=False)
+    image_link = db.Column(db.String(500), nullable=False)
+    facebook_link = db.Column(db.String(120), nullable=False)
+    shows = db.relationship('Show', backref='artist')
+    genre = db.relationship(
+        'Genre', secondary=artist_genre, backref=db.backref('genre'))
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+class Show(db.Model):
+    __tablename__ = 'show'
+
+    id = db.Column(db.Integer, primary_key=True)
+    start_time = db.Column(db.DateTime(), nullable=False)
+    venue_id = db.Column(db.Integer, db.ForeignKey('venue.id'), nullable=False)
+    artist_id = db.Column(db.Integer, db.ForeignKey(
+        'artist.id'), nullable=False)
+
+
+class Genre(db.Model):
+    __tablename__ = 'genre'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -233,14 +266,36 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-    # TODO: insert form data as a new Venue record in the db, instead
-    # TODO: modify data to be the data object returned from db insertion
+    error = False
+    try:
+        # TODO: insert form data as a new Venue record in the db, instead
+        # TODO: modify data to be the data object returned from db insertion
+        data = request.form
 
-    # on successful db insert, flash success
-    flash('Venue ' + request.form['name'] + ' was successfully listed!')
-    # TODO: on unsuccessful db insert, flash an error instead.
-    # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
-    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+        venue = Venue(name=data.get('name'),
+                      city=data.get('city'),
+                      state=data.get('state'), address=data.get('address'),
+                      phone=data.get('phone'),
+                      facebook_link=data.get('facebook_link'),
+                      image_link=data.get('image_link'),)
+        db.session.add(venue)
+        db.session.commit()
+    except:
+        error = True
+        db.session.rollback()
+    finally:
+        db.session.close()
+
+    if error:
+        # on unsuccessful db insert, flash an error instead.
+        # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
+        # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+        flash(
+            f'An error occured: Venue {request.form["name"]} could not be listed.', 'danger')
+    else:
+        # on successful db insert, flash success
+        flash(f'Venue {request.form["name"]} was successfully listed!', 'info')
+
     return render_template('pages/home.html')
 
 
