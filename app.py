@@ -102,7 +102,7 @@ class Genre(db.Model):
     __tablename__ = 'genre'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), nullable=False)
+    name = db.Column(db.String(120), unique=True, nullable=False)
 
 
 #----------------------------------------------------------------------------#
@@ -287,6 +287,9 @@ def create_venue_submission():
                       facebook_link=data.get('facebook_link'),
                       image_link=data.get('image_link'),
                       website_link=data.get('website_link'))
+
+        for genre in data.getlist('genres'):
+            venue.genre
 
         venue.genres.extend([Genre(name=g) for g in data.getlist('genres')])
 
