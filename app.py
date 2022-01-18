@@ -54,7 +54,7 @@ class Venue(db.Model):
     facebook_link = db.Column(db.String(120), nullable=False)
     image_link = db.Column(db.String(500), nullable=False)
     website_link = db.Column(db.String(120), nullable=False)
-    seeking_talent = db.Column(db.Boolean)
+    seeking_talent = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String(500))
 
     shows = db.relationship('Show', backref='venue')
@@ -283,11 +283,19 @@ def create_venue_submission():
 
         venue = Venue(name=data.get('name'),
                       city=data.get('city'),
-                      state=data.get('state'), address=data.get('address'),
+                      state=data.get('state'),
+                      address=data.get('address'),
                       phone=data.get('phone'),
                       facebook_link=data.get('facebook_link'),
-                      image_link=data.get('image_link'))
+                      image_link=data.get('image_link'),
+                      website_link=data.get('website_link'))
+
         venue.genres.extend([Genre(name=g) for g in data.getlist('genres')])
+
+        if data.get('seeking_talent') == 'y':
+            venue.seeking_talent = True
+            venue.seeking_description = data.get('seeking_description')
+
         db.session.add(venue)
         db.session.commit()
     except:
