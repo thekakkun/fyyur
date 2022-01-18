@@ -35,8 +35,8 @@ migrate = Migrate(app, db)
 venue_genre = db.Table('venue_genre',
                        db.Column('venue_id', db.Integer,
                                  db.ForeignKey('venue.id'), primary_key=True),
-                       db.Column('genre_id', db.Integer,
-                                 db.ForeignKey('genre.id'), primary_key=True)
+                       db.Column('genre_name', db.String(120),
+                                 db.ForeignKey('genre.name'), primary_key=True)
                        )
 
 
@@ -63,8 +63,8 @@ class Venue(db.Model):
 artist_genre = db.Table('artist_genre',
                         db.Column('artist_id', db.Integer,
                                   db.ForeignKey('artist.id'), primary_key=True),
-                        db.Column('genre_id', db.Integer,
-                                  db.ForeignKey('genre.id'), primary_key=True)
+                        db.Column('genre_name', db.String(120),
+                                  db.ForeignKey('genre.name'), primary_key=True)
                         )
 
 
@@ -101,8 +101,7 @@ class Show(db.Model):
 class Genre(db.Model):
     __tablename__ = 'genre'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), unique=True, nullable=False)
+    name = db.Column(db.String(120), primary_key=True, nullable=False)
 
 
 #----------------------------------------------------------------------------#
@@ -288,16 +287,20 @@ def create_venue_submission():
                       image_link=data.get('image_link'),
                       website_link=data.get('website_link'))
 
-        for genre in data.getlist('genres'):
-            venue.genre
-
-        venue.genres.extend([Genre(name=g) for g in data.getlist('genres')])
-
         if data.get('seeking_talent') == 'y':
             venue.seeking_talent = True
             venue.seeking_description = data.get('seeking_description')
 
         db.session.add(venue)
+        db.session.flush()
+        venue_id = venue.id
+        for genre in data.getlist('genres'):
+            if not Genre.query.filter_by(name=genre).all():
+                db.session.add(Genre(name=genre))
+                db.session.flush()
+            db.session.execute(venue_genre.insert(), params={
+                               'venue_id': venue_id, 'genre_name': genre})
+
         db.session.commit()
     except:
         error = True
@@ -526,11 +529,19 @@ def create_artist_submission():
                         image_link=data.get('image_link'),
                         website_link=data.get('website_link'))
 
-        artist.genres.extend([Genre(name=g) for g in data.getlist('genres')])
-
         if data.get('seeking_venue') == 'y':
             artist.seeking_venue = True
             artist.seeking_description = data.get('seeking_description')
+
+        db.session.add(artist)
+        db.session.flush()
+        artist_id = artist.id
+        for genre in data.getlist('genres'):
+            if not Genre.query.filter_by(name=genre).all():
+                db.session.add(Genre(name=genre))
+                db.session.flush()
+            db.session.execute(artist_genre.insert(), params={
+                               'artist_id': artist_id, 'genre_name': genre})
 
         db.session.add(artist)
         db.session.commit()
