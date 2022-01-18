@@ -26,6 +26,7 @@ Check out the [original repo](https://github.com/udacity/cd0046-SQL-and-Data-Mod
 - [ ] Implement form submissions for creating new Venues, Artists, and Shows. There should be proper constraints, powering the /create endpoints that serve the create form templates, to avoid duplicate or nonsensical form submissions. Submitting a form should create proper new records in the database.
   - [x] populate genre table, create row when adding venues
   - [x] Implement "venue searching for artist"
+  - [ ] Don't add genre as new row if data already exists in genre table
 - [ ] Implement the controllers for listing venues, artists, and shows. Note the structure of the mock data used. We want to keep the structure of the mock data.
 - [ ] Implement search, powering the /search endpoints that serve the application's search functionalities.
 - [ ] Serve venue and artist detail pages, powering the `<venue|artist>/<id>` endpoints that power the detail pages.
