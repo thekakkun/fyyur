@@ -29,6 +29,9 @@ Check out the [original repo](https://github.com/udacity/cd0046-SQL-and-Data-Mod
   - [x] Don't add genre as new row if data already exists in genre table
   - [x] Implement creation of shows
   - [ ] Implement editing and deleting artists/venues/shows
+  - [ ] Implement correct status for showing seeking status in edit form
+  - [ ] Saving edit updates genre
+  - [ ] Show error if unable to save changes
 - [x] Implement the controllers for listing venues, artists, and shows. Note the structure of the mock data used. We want to keep the structure of the mock data.
   - [x] Show artist list and artist page
   - [x] Show venue list and venue page
