@@ -190,26 +190,13 @@ def search_venues():
 def show_venue(venue_id):
     # shows the venue page with the given venue_id
 
-    venue = Venue.query.get(venue_id)
-    data = {
-        "id": venue.id,
-        "name": venue.name,
-        "genres": venue.genres,
-        "address": venue.address,
-        "city": venue.city,
-        "state": venue.state,
-        "phone": venue.phone,
-        "website": venue.website_link,
-        "facebook_link": venue.facebook_link,
-        "seeking_talent": venue.seeking_talent,
-        "seeking_description": venue.seeking_description,
-        "image_link": venue.image_link,
-        "past_shows": [],
-        "upcoming_shows": [],
-        "past_shows_count": 0,
-        "upcoming_shows_count": 0,
-    }
-    for show in venue.shows.all():
+    data = Venue.query.get(venue_id)
+    data.upcoming_shows = []
+    data.upcoming_shows_count = 0
+    data.past_shows = []
+    data.past_shows_count = 0
+
+    for show in data.shows.all():
         show_data = {
             "artist_id": show.artist_id,
             "artist_name": show.artist.name,
@@ -217,11 +204,11 @@ def show_venue(venue_id):
             "start_time": str(show.start_time)
         }
         if datetime.now() < show.start_time:
-            data['upcoming_shows'].append(show_data)
-            data['upcoming_shows_count'] += 1
+            data.upcoming_shows.append(show_data)
+            data.upcoming_shows_count += 1
         else:
-            data['past_shows'].append(show_data)
-            data['past_shows_count'] += 1
+            data.past_shows.append(show_data)
+            data.past_shows_count += 1
 
     return render_template('pages/show_venue.html', venue=data)
 
@@ -269,7 +256,6 @@ def create_venue_submission():
         error = True
         db.session.rollback()
 
-        raise
     finally:
         db.session.close()
 
@@ -286,12 +272,32 @@ def create_venue_submission():
 
 @ app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
-    # TODO: Complete this endpoint for taking a venue_id, and using
-    # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
+
+    venue = Venue.query.get(venue_id)
+    venue_name = venue.name
+    error = False
+    try:
+        db.session.delete(venue)
+        db.session.commit()
+
+    except:
+        db.session.rollback()
+        error = True
+
+    finally:
+        db.session.close()
+
+    if error:
+        # on unsuccessful artist edit, flash an error instead.
+        flash(
+            f'An error occured: Venue {venue_name} could not be deleted.', 'danger')
+    else:
+        # on successful db insert, flash success
+        flash(f'Venue {venue_name} was successfully deleted!', 'info')
 
     # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
     # clicking that button delete it from the db then redirect the user to the homepage
-    return None
+    return render_template('pages/home.html')
 
 #  Artists
 #  ----------------------------------------------------------------
@@ -326,23 +332,12 @@ def search_artists():
 def show_artist(artist_id):
     # shows the artist page with the given artist_id
 
-    artist = Artist.query.get(artist_id)
-    # TODO: Probably able to do this without creating new dict
-    data = {
-        'id': artist.id,
-        'name': artist.name,
-        'genres': artist.genres,
-        'city': artist.city,
-        'state': artist.state,
-        'phone': artist.phone,
-        'seeking_venue': artist.seeking_venue,
-        'seeking_description': artist.seeking_description,
-        'image_link': artist.image_link,
-        'upcoming_shows': [],
-        'upcoming_shows_count': 0,
-        'past_shows': [],
-        'past_shows_count': 0
-    }
+    data = Artist.query.get(artist_id)
+    data.upcoming_shows = []
+    data.upcoming_shows_count = 0
+    data.past_shows = []
+    data.past_shows_count = 0
+
     shows = [{'venue_id': show.venue.id,
               'venue_name': show.venue.name,
              'venue_image_link': show.venue.image_link,
@@ -352,11 +347,11 @@ def show_artist(artist_id):
 
     for show in shows:
         if show['upcoming']:
-            data['upcoming_shows'].append(show)
-            data['upcoming_shows_count'] += 1
+            data.upcoming_shows.append(show)
+            data.upcoming_shows_count += 1
         else:
-            data['past_shows'].append(show)
-            data['past_shows_count'] += 1
+            data.past_shows.append(show)
+            data.past_shows_count += 1
 
     return render_template('pages/show_artist.html', artist=data)
 
@@ -370,6 +365,7 @@ def edit_artist(artist_id):
 
     artist = Artist.query.get(artist_id)
     form.genres.data = [x.name for x in artist.genres]
+    form.seeking_venue.data = artist.seeking_venue
 
     return render_template('forms/edit_artist.html', form=form, artist=artist)
 
@@ -380,12 +376,14 @@ def edit_artist_submission(artist_id):
 
     data = request.form
     artist = Artist.query.get(artist_id)
+    artist_name = Artist.query.get(artist_id).name
     error = False
     try:
         artist.name = data.get('name')
         artist.city = data.get('city')
         artist.state = data.get('state')
         artist.phone = data.get('phone')
+        artist.genres = []
         artist.facebook_link = data.get('facebook_link')
         artist.image_link = data.get('image_link')
         artist.website_link = data.get('website_link')
@@ -393,14 +391,28 @@ def edit_artist_submission(artist_id):
             data.get('seeking_venue')) is None else True
         artist.seeking_description = data.get('seeking_description')
 
+        for genre in data.getlist('genres'):
+            if not Genre.query.filter_by(name=genre).all():
+                db.session.add(Genre(name=genre))
+                db.session.flush()
+            db.session.execute(artist_genre.insert(), params={
+                               'artist_id': artist_id, 'genre_name': genre})
+
         db.session.commit()
     except:
         error = True
         db.session.rollback()
 
-        raise
     finally:
         db.session.close()
+
+    if error:
+        # on unsuccessful artist edit, flash an error instead.
+        flash(
+            f'An error occured: Artist {artist_name} could not be edited.', 'danger')
+    else:
+        # on successful db insert, flash success
+        flash(f'Artist {artist_name} was successfully edited!', 'info')
 
     return redirect(url_for('show_artist', artist_id=artist_id))
 
@@ -411,23 +423,23 @@ def edit_venue(venue_id):
 
     venue = Venue.query.get(venue_id)
     form.genres.data = [x.name for x in venue.genres]
+    form.seeking_talent.data = venue.seeking_talent
 
     return render_template('forms/edit_venue.html', form=form, venue=venue)
 
 
 @ app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
-    # TODO: take values from the form submitted, and update existing
-    # venue record with ID <venue_id> using the new attributes\
-
     data = request.form
     venue = Venue.query.get(venue_id)
+    venue_name = Venue.query.get(venue_id).name
     error = False
     try:
         venue.name = data.get('name')
         venue.city = data.get('city')
         venue.state = data.get('state')
         venue.phone = data.get('phone')
+        venue.genres = []
         venue.facebook_link = data.get('facebook_link')
         venue.image_link = data.get('image_link')
         venue.website_link = data.get('website_link')
@@ -435,15 +447,29 @@ def edit_venue_submission(venue_id):
             data.get('seeking_talent')) is None else True
         venue.seeking_description = data.get('seeking_description')
 
+        for genre in data.getlist('genres'):
+            if not Genre.query.filter_by(name=genre).all():
+                db.session.add(Genre(name=genre))
+                db.session.flush()
+            db.session.execute(venue_genre.insert(), params={
+                               'venue_id': venue_id, 'genre_name': genre})
+
         db.session.commit()
+
     except:
         error = True
         db.session.rollback()
 
-        raise
     finally:
         db.session.close()
 
+    if error:
+        # on unsuccessful venue edit, flash an error instead.
+        flash(
+            f'An error occured: Artist {venue_name} could not be edited.', 'danger')
+    else:
+        # on successful db insert, flash success
+        flash(f'Artist {venue_name} was successfully edited!', 'info')
 
     return redirect(url_for('show_venue', venue_id=venue_id))
 
@@ -492,8 +518,6 @@ def create_artist_submission():
     except:
         error = True
         db.session.rollback()
-
-        raise
 
     finally:
         db.session.close()
@@ -552,8 +576,6 @@ def create_show_submission():
     except:
         error = True
         db.session.rollback()
-
-        raise
 
     finally:
         db.session.close()
