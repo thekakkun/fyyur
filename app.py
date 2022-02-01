@@ -12,7 +12,6 @@ from flask import (Flask, Response, flash, redirect, render_template, request,
                    url_for)
 from flask_migrate import Migrate
 from flask_moment import Moment
-from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import Form
 
 from forms import *
