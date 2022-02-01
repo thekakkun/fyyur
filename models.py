@@ -23,12 +23,12 @@ class Venue(db.Model):
     city = db.Column(db.String(120), nullable=False)
     state = db.Column(db.String(120), nullable=False)
     address = db.Column(db.String(120), nullable=False)
-    phone = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(120), nullable=True)
     genres = db.relationship('Genre', secondary=venue_genre, lazy='subquery',
                              backref=db.backref('venue', lazy=True))
-    facebook_link = db.Column(db.String(120), nullable=False)
-    image_link = db.Column(db.String(500), nullable=False)
-    website_link = db.Column(db.String(120), nullable=False)
+    facebook_link = db.Column(db.String(120), nullable=True)
+    image_link = db.Column(db.String(500), nullable=True)
+    website_link = db.Column(db.String(120), nullable=True)
     seeking_talent = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String(500))
 
@@ -53,12 +53,12 @@ class Artist(db.Model):
     name = db.Column(db.String, nullable=False)
     city = db.Column(db.String(120), nullable=False)
     state = db.Column(db.String(120), nullable=False)
-    phone = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(120), nullable=True)
     genres = db.relationship('Genre', secondary=artist_genre, lazy='subquery',
                              backref=db.backref('artist', lazy=True))
-    facebook_link = db.Column(db.String(120), nullable=False)
-    image_link = db.Column(db.String(500), nullable=False)
-    website_link = db.Column(db.String(120), nullable=False)
+    facebook_link = db.Column(db.String(120), nullable=True)
+    image_link = db.Column(db.String(500), nullable=True)
+    website_link = db.Column(db.String(120), nullable=True)
     seeking_venue = db.Column(db.Boolean, nullable=False, default=False)
     seeking_description = db.Column(db.String(500))
 

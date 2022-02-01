@@ -13,6 +13,7 @@ from flask import (Flask, Response, flash, redirect, render_template, request,
 from flask_migrate import Migrate
 from flask_moment import Moment
 from flask_wtf import Form
+from flask_wtf.csrf import CSRFProtect
 
 from forms import *
 from models import *
@@ -26,6 +27,7 @@ moment = Moment(app)
 app.config.from_object('config')
 db.init_app(app)
 migrate = Migrate(app, db)
+csrf = CSRFProtect(app)
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -139,9 +141,16 @@ def create_venue_form():
 @ app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
     error = False
-    try:
-        data = request.form
 
+    data = request.form
+    form = VenueForm(request.form)
+
+    if not form.validate():
+        for (field, error) in form.errors.items():
+            flash(f'{field}: {error}', 'danger')
+        return render_template('forms/new_venue.html', form=form)
+
+    try:
         venue = Venue(name=data.get('name'),
                       city=data.get('city'),
                       state=data.get('state'),
@@ -166,6 +175,7 @@ def create_venue_submission():
                                'venue_id': venue_id, 'genre_name': genre})
 
         db.session.commit()
+
     except:
         error = True
         db.session.rollback()
@@ -289,6 +299,13 @@ def edit_artist_submission(artist_id):
     # artist record with ID <artist_id> using the new attributes
 
     data = request.form
+
+    form = ArtistForm(request.form)
+    if not form.validate():
+        for (field, error) in form.errors.items():
+            flash(f'{field}: {error}', 'danger')
+        return render_template('forms/new_artist.html', form=form)
+
     artist = Artist.query.get(artist_id)
     artist_name = Artist.query.get(artist_id).name
     error = False
@@ -345,6 +362,13 @@ def edit_venue(venue_id):
 @ app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
     data = request.form
+
+    form = VenueForm(request.form)
+    if not form.validate():
+        for (field, error) in form.errors.items():
+            flash(f'{field}: {error}', 'danger')
+        return render_template('forms/new_venue.html', form=form)
+
     venue = Venue.query.get(venue_id)
     venue_name = Venue.query.get(venue_id).name
     error = False
@@ -400,9 +424,16 @@ def create_artist_form():
 @ app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
     error = False
+    data = request.form
+
+    form = ArtistForm(request.form)
+    if not form.validate():
+        for (field, error) in form.errors.items():
+            flash(f'{field}: {error}', 'danger')
+        return render_template('forms/new_artist.html', form=form)
 
     try:
-        data = request.form
+        
 
         artist = Artist(name=data.get('name'),
                         city=data.get('city'),
