@@ -42,8 +42,8 @@ Check out the [original repo](https://github.com/udacity/cd0046-SQL-and-Data-Mod
 
 - [x] Your migration scripts are not working - please make sure they start from a blank database, i.e. no table in it
 - [x] Your requirements.txt does not contain all the dependencies used in your project. Make sure you use "pip freeze > requirements.txt"
-- [ ] Your code achieved this part of the functionality without using JOIN queries - which in and of itself are good! To challenge yourself and conform with the rubric, make use of the JOIN query in your next submission.
-- [ ] Field validation is not implemented.
+- [x] Your code achieved this part of the functionality without using JOIN queries - which in and of itself are good! To challenge yourself and conform with the rubric, make use of the JOIN query in your next submission.
+- [x] Field validation is not implemented.
 - [x]You would also need to separate the model definition into a separate models.py, as per this rubric requirement.
 
 ### Above and Beyond

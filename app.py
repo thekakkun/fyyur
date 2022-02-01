@@ -112,11 +112,17 @@ def show_venue(venue_id):
     data.past_shows = []
     data.past_shows_count = 0
 
-    for show in data.shows.all():
+    shows = db.engine.execute('''
+        SELECT artist.id, artist.name, artist.image_link, show.start_time
+        FROM artist JOIN show ON
+            artist.id = show.artist_id;
+    ''').all()
+
+    for show in shows:
         show_data = {
-            "artist_id": show.artist_id,
-            "artist_name": show.artist.name,
-            "artist_image_link": show.artist.image_link,
+            "artist_id": show.id,
+            "artist_name": show.name,
+            "artist_image_link": show.image_link,
             "start_time": str(show.start_time)
         }
         if datetime.now() < show.start_time:
@@ -262,19 +268,24 @@ def show_artist(artist_id):
     data.past_shows = []
     data.past_shows_count = 0
 
-    shows = [{'venue_id': show.venue.id,
-              'venue_name': show.venue.name,
-             'venue_image_link': show.venue.image_link,
-              'upcoming': datetime.now() < show.start_time,
-              'start_time': str(show.start_time)}
-             for show in Show.query.filter_by(artist_id=artist_id).all()]
+    shows = db.engine.execute('''
+        SELECT artist.id, artist.name, artist.image_link, show.start_time
+        FROM artist JOIN show ON
+            artist.id = show.artist_id;
+    ''').all()
 
     for show in shows:
-        if show['upcoming']:
-            data.upcoming_shows.append(show)
+        show_data = {
+            "venue_id": show.id,
+            "venue_name": show.name,
+            "venue_image_link": show.image_link,
+            "start_time": str(show.start_time)
+        }
+        if datetime.now() < show.start_time:
+            data.upcoming_shows.append(show_data)
             data.upcoming_shows_count += 1
         else:
-            data.past_shows.append(show)
+            data.past_shows.append(show_data)
             data.past_shows_count += 1
 
     return render_template('pages/show_artist.html', artist=data)
@@ -433,7 +444,6 @@ def create_artist_submission():
         return render_template('forms/new_artist.html', form=form)
 
     try:
-        
 
         artist = Artist(name=data.get('name'),
                         city=data.get('city'),
