@@ -27,7 +27,6 @@ moment = Moment(app)
 app.config.from_object('config')
 db.init_app(app)
 migrate = Migrate(app, db)
-csrf = CSRFProtect(app)
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -112,17 +111,13 @@ def show_venue(venue_id):
     data.past_shows = []
     data.past_shows_count = 0
 
-    shows = db.engine.execute('''
-        SELECT artist.id, artist.name, artist.image_link, show.start_time
-        FROM artist JOIN show ON
-            artist.id = show.artist_id;
-    ''').all()
+    shows = db.session.query(Show).join(Artist, Show.venue_id==Artist.id).filter(Show.venue_id==venue_id).all()
 
     for show in shows:
         show_data = {
-            "artist_id": show.id,
-            "artist_name": show.name,
-            "artist_image_link": show.image_link,
+            "artist_id": show.artist.id,
+            "artist_name": show.artist.name,
+            "artist_image_link": show.artist.image_link,
             "start_time": str(show.start_time)
         }
         if datetime.now() < show.start_time:
@@ -268,17 +263,13 @@ def show_artist(artist_id):
     data.past_shows = []
     data.past_shows_count = 0
 
-    shows = db.engine.execute('''
-        SELECT artist.id, artist.name, artist.image_link, show.start_time
-        FROM artist JOIN show ON
-            artist.id = show.artist_id;
-    ''').all()
+    shows = db.session.query(Show).join(Venue, Show.venue_id==Venue.id).filter(Show.artist_id==artist_id).all()
 
     for show in shows:
         show_data = {
-            "venue_id": show.id,
-            "venue_name": show.name,
-            "venue_image_link": show.image_link,
+            "venue_id": show.venue.id,
+            "venue_name": show.venue.name,
+            "venue_image_link": show.venue.image_link,
             "start_time": str(show.start_time)
         }
         if datetime.now() < show.start_time:
