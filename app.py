@@ -34,12 +34,14 @@ migrate = Migrate(app, db)
 
 
 def format_datetime(value, format='medium'):
-    date = dateutil.parser.parse(value)
+    if isinstance(value, str):
+        value = dateutil.parser.parse(value)
+
     if format == 'full':
         format = "EEEE MMMM, d, y 'at' h:mma"
     elif format == 'medium':
         format = "EE MM, dd, y h:mma"
-    return babel.dates.format_datetime(date, format, locale='en')
+    return babel.dates.format_datetime(value, format, locale='en')
 
 
 app.jinja_env.filters['datetime'] = format_datetime
@@ -106,26 +108,17 @@ def show_venue(venue_id):
     # shows the venue page with the given venue_id
 
     data = Venue.query.get(venue_id)
-    data.upcoming_shows = []
-    data.upcoming_shows_count = 0
-    data.past_shows = []
-    data.past_shows_count = 0
 
-    shows = db.session.query(Show).join(Artist, Show.venue_id==Artist.id).filter(Show.venue_id==venue_id).all()
+    shows = db.session.query(Show.start_time, Artist.id, Artist.name, Artist.image_link).join(
+        Artist).filter(Show.venue_id == venue_id)
 
-    for show in shows:
-        show_data = {
-            "artist_id": show.artist.id,
-            "artist_name": show.artist.name,
-            "artist_image_link": show.artist.image_link,
-            "start_time": str(show.start_time)
-        }
-        if datetime.now() < show.start_time:
-            data.upcoming_shows.append(show_data)
-            data.upcoming_shows_count += 1
-        else:
-            data.past_shows.append(show_data)
-            data.past_shows_count += 1
+    upcoming_shows = shows.filter(datetime.now() < Show.start_time)
+    data.upcoming_shows = upcoming_shows.all()
+    data.upcoming_shows_count = upcoming_shows.count()
+
+    past_shows = shows.filter(datetime.now() > Show.start_time)
+    data.past_shows = past_shows.all()
+    data.past_shows_count = past_shows.count()
 
     return render_template('pages/show_venue.html', venue=data)
 
@@ -258,26 +251,17 @@ def show_artist(artist_id):
     # shows the artist page with the given artist_id
 
     data = Artist.query.get(artist_id)
-    data.upcoming_shows = []
-    data.upcoming_shows_count = 0
-    data.past_shows = []
-    data.past_shows_count = 0
 
-    shows = db.session.query(Show).join(Venue, Show.venue_id==Venue.id).filter(Show.artist_id==artist_id).all()
+    shows = db.session.query(Show.start_time, Venue.id, Venue.name, Venue.image_link).join(
+        Venue).filter(Show.artist_id == artist_id)
 
-    for show in shows:
-        show_data = {
-            "venue_id": show.venue.id,
-            "venue_name": show.venue.name,
-            "venue_image_link": show.venue.image_link,
-            "start_time": str(show.start_time)
-        }
-        if datetime.now() < show.start_time:
-            data.upcoming_shows.append(show_data)
-            data.upcoming_shows_count += 1
-        else:
-            data.past_shows.append(show_data)
-            data.past_shows_count += 1
+    upcoming_shows = shows.filter(datetime.now() < Show.start_time)
+    data.upcoming_shows = upcoming_shows.all()
+    data.upcoming_shows_count = upcoming_shows.count()
+
+    past_shows = shows.filter(datetime.now() > Show.start_time)
+    data.past_shows = past_shows.all()
+    data.past_shows_count = past_shows.count()
 
     return render_template('pages/show_artist.html', artist=data)
 
